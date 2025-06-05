@@ -36,60 +36,47 @@ jobs:
       name: Set up platform-dependent variables
       run: |
         sha="$(git rev-parse --short=7 HEAD)"
-
         if [[ "$GITHUB_REF" == "refs/tags/"* ]]; then
           suffix=${GITHUB_REF_NAME}
         else
           suffix=nightly-${sha}
         fi
-
         bindist=Agda-${suffix}
-
         echo sha="${sha}"                                           >> "${GITHUB_OUTPUT}"
         echo bindist="${bindist}"                                   >> "${GITHUB_OUTPUT}"
-
         if [[ "$OSTYPE" == "msys"* ]]; then
-
           filename="${bindist}-win64.zip"
           echo args="${ARGS} ${WIN64_ARGS}"                         >> "${GITHUB_OUTPUT}"
           echo compress-cmd="7z a ${filename} ${bindist} -bb -mx=9" >> "${GITHUB_OUTPUT}"
           echo content-type="application/zip"                       >> "${GITHUB_OUTPUT}"
           echo exe="agda.exe"                                       >> "${GITHUB_OUTPUT}"
           echo filename="${filename}"                               >> "${GITHUB_OUTPUT}"
-
         elif [[ "$MATRIX_OS" == "macos-13" ]]; then
-
           filename="${bindist}-macOS-x64.tar.xz"
           echo args="${ARGS} ${MACOS_ARGS}"                         >> "${GITHUB_OUTPUT}"
           echo compress-cmd="tar -a -cvf ${filename} ${bindist}"    >> "${GITHUB_OUTPUT}"
           echo content-type="application/x-xz"                      >> "${GITHUB_OUTPUT}"
           echo exe="agda"                                           >> "${GITHUB_OUTPUT}"
           echo filename="${filename}"                               >> "${GITHUB_OUTPUT}"
-
         elif [[ "$MATRIX_OS" == "macos-14" ]]; then
-
           filename="${bindist}-macOS-arm64.tar.xz"
           echo args="${ARGS} ${MACOS_ARGS}"                         >> "${GITHUB_OUTPUT}"
           echo compress-cmd="tar -a -cvf ${filename} ${bindist}"    >> "${GITHUB_OUTPUT}"
           echo content-type="application/x-xz"                      >> "${GITHUB_OUTPUT}"
           echo exe="agda"                                           >> "${GITHUB_OUTPUT}"
           echo filename="${filename}"                               >> "${GITHUB_OUTPUT}"
-
         elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-
           filename="${bindist}-linux.tar.xz"
           echo args="${ARGS} ${LINUX_ARGS}"                         >> "${GITHUB_OUTPUT}"
           echo compress-cmd="tar -a -cvf ${filename} ${bindist}"    >> "${GITHUB_OUTPUT}"
           echo content-type="application/x-xz"                      >> "${GITHUB_OUTPUT}"
           echo exe="agda"                                           >> "${GITHUB_OUTPUT}"
           echo filename="${filename}"                               >> "${GITHUB_OUTPUT}"
-
         fi
     - name: Display build variables
       run: |
         echo "GITHUB_REF      = ${GITHUB_REF}"
         echo "GITHUB_REF_NAME = ${GITHUB_REF_NAME}"
-
         echo "args            = ${{ steps.vars.outputs.args         }}"
         echo "compress-cmd    = ${{ steps.vars.outputs.compress-cmd }}"
         echo "content-type    = ${{ steps.vars.outputs.content-type }}"
@@ -100,7 +87,7 @@ jobs:
       uses: jirutka/setup-alpine@v1
       with:
         packages: |
-          cabal g++ gcc icu-static ncurses-dev ncurses-static musl-dev zlib-static zlib-dev
+          cabal g++ gcc gmp gmp-static icu-static ncurses-dev ncurses-static musl-dev zlib-static zlib-dev
     - id: setup-haskell
       if: ${{ runner.os != 'Linux' }}
       uses: haskell-actions/setup@v2
@@ -177,22 +164,16 @@ jobs:
         bindist="${{ steps.vars.outputs.bindist }}"
         mkdir -p "${bindist}"/bin
         cp -a src/data "${bindist}"
-
         if [[ "$OSTYPE" == "msys"* ]]; then
-
           find dist-newstyle/build \( -name 'agda.exe' -o -name 'agda-mode.exe' \) -type f -exec cp {} "${bindist}"/bin \;
           cp -a .github/*.bat "${bindist}"
           cp /c/msys64/mingw64/bin/libicu*.dll "${bindist}"/bin/
           strip "${bindist}"/bin/*
-
         else
-
           find dist-newstyle/build \( -name 'agda' -o -name 'agda-mode' \) -type f -exec cp {} "${bindist}"/bin \;
           strip "${bindist}"/bin/*
           cp -a .github/*.sh "${bindist}"
-
           if [[ "$OSTYPE" == "darwin"* ]]; then
-
           # Change the path to the dynamic library icu4c to the run-time search path:
           #
           # 1. the same directory of executable, i.e. @executable_path
@@ -205,10 +186,8 @@ jobs:
           install_name_tool -change "${ICU_DIR}/libicui18n.${ICU_MAJOR_VER}.dylib" "@rpath/libicui18n.${ICU_MAJOR_VER}.dylib" "${bindist}"/bin/agda
           install_name_tool -add_rpath @executable_path -add_rpath @executable_path/../lib -add_rpath "${ICU_DIR}" "${bindist}"/bin/agda
           otool -L "${bindist}"/bin/agda
-
           fi
         fi
-
         file "${{ steps.vars.outputs.bindist }}/bin/agda"
     - name: Display the version information
       run: |
@@ -260,7 +239,6 @@ jobs:
       run: |
         echo "GITHUB_REF_NAME=${GITHUB_REF_NAME}"
         echo "GITHUB_REPOSITORY=${GITHUB_REPOSITORY}"
-
         gh release delete "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --yes || true
         gh release create "${GITHUB_REF_NAME}" -d --notes-file CHANGELOG.md --title "${GITHUB_REF_NAME}"
         ls -R artifacts

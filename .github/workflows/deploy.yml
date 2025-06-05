@@ -15,8 +15,8 @@ jobs:
     runs-on: Ubuntu-latest
     steps:
     - uses: styfle/cancel-workflow-action@0.12.1
-      with:
-        access_token: ${{ github.token }}
+     
+        
   build:
     env:
       ARGS: --disable-executable-profiling --disable-library-profiling

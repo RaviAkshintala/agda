@@ -87,7 +87,7 @@ jobs:
       uses: jirutka/setup-alpine@v1
       with:
         packages: |
-          cabal g++ gcc gmp gmp-static icu-static ncurses-dev ncurses-static musl-dev zlib-static zlib-dev
+          cabal g++ gcc gmp-dev gmp-static icu-static ncurses-dev ncurses-static musl-dev zlib-static zlib-dev
     - id: setup-haskell
       if: ${{ runner.os != 'Linux' }}
       uses: haskell-actions/setup@v2
